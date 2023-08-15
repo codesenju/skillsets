@@ -1,0 +1,90 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: prod
+namePrefix: prod-
+
+# Replaces SKILLSETS_API_IMAGE_NAME with the new image name and tag
+images:
+- name: SKILLSETS_API_IMAGE_NAME
+  newName: codesenju/skillsets-api
+  newTag: latest
+
+# Generate a configmap
+configMapGenerator:
+- literals:
+  - REDIS_HOST=localhost
+  - REDIS_PORT="6379"
+  - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+  - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT='http://my-collector-xray-collector.opentelemetry-operator-system.svc.cluster.local:4317'
+  - OTEL_PROPAGATORS=xray
+  - OTEL_PYTHON_ID_GENERATOR=xray
+  - OTEL_RESOURCE_ATTRIBUTES='service.name=skillsets-api'
+  - REDIS_PASSWORD="vAxo9sOKRw"
+  name: skillsets-api-config
+
+# Takes the name of the redis service and uses it as the value for the REDIS_HOST key in the skillsets-config ConfigMap.
+replacements:
+#- source:
+#    fieldPath: metadata.name
+#    kind: Service
+#    name: skillsets-redis-db
+#    version: v1
+#  targets:
+#  - fieldPaths:
+#    - data.REDIS_HOST
+#    select:
+#      kind: ConfigMap
+#      name: skillsets-api-config
+#  - fieldPaths:
+#    - spec.scaleTargetRef.name
+#    select:
+#      kind: HorizontalPodAutoscaler
+#      name: skillsets-redis-db-hpa
+- source:
+    fieldPath: metadata.name
+    kind: Service
+    name: skillsets-api
+    version: v1
+  targets:
+  - fieldPaths:
+    - spec.scaleTargetRef.name
+    select:
+      kind: HorizontalPodAutoscaler
+      name: skillsets-api-hpa
+
+# This specifies that the patch in ingress-patch.yaml 
+# should be applied to an Ingress resource named skillsets-ingress 
+# in the networking.k8s.io/v1 API group and version. 
+# - patch: |-
+#     - op: replace # action 
+#       path: /spec/rules/0/host # resource we want to change
+#       value: uat-skillsets-ui.lmasu.co.za # value we want to use for patching 
+#   target:
+#     group: networking.k8s.io
+#     version: v1
+#     kind: Ingress
+#     name: skillsets-ui-ingress
+patches:
+- path: ingress-patch.yaml
+  target:
+    group: networking.k8s.io
+    kind: Ingress
+    name: skillsets-api-ingress
+    version: v1
+- path: topology_spread_patch.yaml
+- path: mem_cpu_patch.yaml
+# Replace redis-secret key values with the following:
+- patch: |-
+    - op: replace
+      path: /data/REDIS_HOST
+      value: cHJvZC1yZWRpcy1tYXN0ZXIucHJvZC1yZWRpcy5zdmMuY2x1c3Rlci5sb2NhbA==
+    - op: replace
+      path: /data/REDIS_PASSWORD
+      value: S1ZtUTY3Y0NibA==
+  target:
+    kind: Secret
+    name: redis-secret
+
+resources:
+- ../base/

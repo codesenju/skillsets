@@ -1,0 +1,138 @@
+
+#!/usr/bin/env python3
+# Reference:
+# - https://ecsworkshop.com/app_mesh/appmesh-implementation/mesh-crystal-app/
+# - https://docs.aws.amazon.com/cdk/api/v2/python/index.html
+import boto3
+import subprocess
+from os import path
+from aws_cdk import (
+    CfnParameter,
+    Stack,
+    aws_codebuild as codebuild,
+    aws_codecommit as codecommit,
+    aws_ecr as ecr,
+    aws_iam as iam,
+    aws_eks as eks,
+    aws_secretsmanager as secretsmanager,
+    aws_lambda as _lambda
+)
+import os, json
+from constructs import Construct
+import aws_cdk as cdk
+from aws_cdk.aws_ecr_assets import DockerImageAsset
+#import  cdk_ecr_deployment  as ecrdeploy
+
+class skillsetsAPICodebuildStack(Stack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+        
+        cluster_name= "uat"
+        
+        AWS_ACCOUNT_ID = os.getenv("AWS_ACCOUNT_ID"),
+        AWS_REGION = os.getenv("AWS_REGION")
+        DOCKER_PASSWORD=os.getenv("DOCKER_PASSWORD")
+        DOCKER_USERNAME=os.getenv("DOCKER_USERNAME")
+        ARGOCD_USERNAME=os.getenv("ARGOCD_USERNAME")
+        ARGOCD_PASSWORD=os.getenv("ARGOCD_PASSWORD")
+        ARGOCD_SERVER=os.getenv("ARGOCD_SERVER")
+
+        REPOSITORY_URI=f"%s.dkr.ecr.{AWS_REGION}.amazonaws.com/iac-skillsets-api" % (AWS_ACCOUNT_ID)
+        EKS_KUBECTL_ROLE_ARN="arn:aws:iam::%s:role/EksCodeBuildKubectlRole" % (AWS_ACCOUNT_ID)
+
+       # Create a policy document for lambda role
+        my_lambda_policy_document = iam.PolicyDocument(
+            statements=[
+                iam.PolicyStatement(
+                    actions=["iam:CreateServiceSpecificCredential","secretsmanager:CreateSecret"],
+                    resources=["*"]
+                )
+            ]
+        )
+
+        # Create role for lambda function
+        lambda_role = iam.Role(self,"skillsetsAPILamabdaRole",
+           assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+           # custom description if desired
+           description="Codebuild skillsets-api lambda role",
+         role_name="001_IaC-skillsets-api-lambda-role",
+        inline_policies={
+            "my_lambda_policy": my_lambda_policy_document
+        }
+        )  
+
+        # Create a codecommit user
+        codecommit_user = iam.User(self, "codecommit01", user_name="codecommit01",managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name("AWSCodeCommitPowerUser")])
+
+        # Define the Lambda function code
+        lambda_code = """
+import boto3
+import json
+
+def lambda_handler(event, context):
+    try:
+        # Create an IAM client
+        iam = boto3.client('iam')
+
+        # Create a service-specific credential
+        response = iam.create_service_specific_credential(
+            UserName='codecommit01',
+            ServiceName='codecommit.amazonaws.com'
+        )
+
+        # Extract the ServicePassword and ServiceUserName from the response
+        service_password = response['ServiceSpecificCredential']['ServicePassword']
+        service_user_name = response['ServiceSpecificCredential']['ServiceUserName']
+
+        # Store the ServicePassword and ServiceUserName in a Secrets Manager secret
+        secretsmanager_client = boto3.client('secretsmanager')
+        secretsmanager_client.create_secret(
+            Name='myCodecommitSecret',
+            SecretString=json.dumps({
+                'ServicePassword': service_password,
+                'ServiceUserName': service_user_name
+            })
+        )
+
+        # Return a success message
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'message': 'Secret myCodecommitSecret was created successfully'
+            })
+        }
+    except Exception as e:
+        # Return an error message
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'message': f'An error occurred: {str(e)}'
+            })
+        }
+        """
+        
+        # Create the Lambda function
+        my_lambda = _lambda.Function(
+            self, 'mySkillsetsAPILambda',
+            code=_lambda.InlineCode(lambda_code),
+            handler='index.lambda_handler',
+            runtime=_lambda.Runtime.PYTHON_3_8,
+            function_name="mySkillsetsAPILambda",
+            role=lambda_role,            
+        )
+
+   
+app=cdk.App()
+skillsetsAPICodebuildStack(app, "skillsetsAPICodebuildStack", env=cdk.Environment(account=os.getenv("AWS_ACCOUNT_ID"), region=os.getenv("AWS_REGION")),)
+app.synth()
+
+
+# Invoke the Lambda function after the stack has been successfully created
+lambda_client = boto3.client('lambda')
+response = lambda_client.invoke(
+    FunctionName='mySkillsetsAPILambda',
+    InvocationType='RequestResponse'
+)
+response_payload = json.loads(response['Payload'].read().decode())
+print(response_payload['body'])

@@ -1,0 +1,120 @@
+################
+## DEPLOYMENT ##
+################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  skillsets
+  namespace: skillsets
+  labels:
+    app:  skillsets
+spec:
+  selector:
+    matchLabels:
+      app: skillsets
+#  replicas: 0
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app:  skillsets
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "demo-instrumentation"
+    spec:
+      containers:
+      - name:  skillsets
+        image:  CONTAINER_IMAGE
+        imagePullPolicy: Always
+        command:
+          - flask
+        args:
+          - run
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+#        livenessProbe:
+#          tcpSocket:
+#            port: 5000
+#          initialDelaySeconds: 5
+#          timeoutSeconds: 5
+#          successThreshold: 1
+#          failureThreshold: 3
+#          periodSeconds: 10
+#        readinessProbe:
+#          httpGet:
+#            path: /healthz
+#            port: 5000
+#          initialDelaySeconds: 5
+#          timeoutSeconds: 2
+#          successThreshold: 1
+#          failureThreshold: 3
+#          periodSeconds: 10
+        envFrom:
+        - configMapRef:
+            name: skillsets-config
+        ports:
+        - containerPort:  80
+          name:  skillsets-port
+      restartPolicy: Always
+################
+## CONFIG MAP ##
+################
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: skillsets-config
+  namespace: skillsets
+data:
+#  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:  "http://my-collector-xray-collector.prometheus.svc.cluster.local:4317"
+#  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://my-collector-xray-collector.prometheus.svc.cluster.local:4317"
+#  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: "http://my-collector-xray-collector.prometheus.svc.cluster.local:4317"
+  REDIS_HOST: redis.skillsets.svc.cluster.local
+  REDIS_PORT: "6379"
+#  OTEL_TRACES_SAMPLER: xray
+#  OTEL_PROPAGATORS: xray
+  PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python
+#############
+## SERVICE ##
+#############
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skillsets
+  namespace: skillsets
+spec:
+  selector:
+    app: skillsets
+  type: NodePort
+  ports:
+  - name: skillsets-port
+    protocol: TCP
+    port: 5000
+    targetPort: 5000
+#############
+##   HPA   ##
+#############
+# ---
+# apiVersion: autoscaling/v1
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: skillsets
+#   namespace: skillsets
+# spec:
+#   maxReplicas: 20
+#   minReplicas: 1
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: skillsets
+#   targetCPUUtilizationPercentage: 80

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@opentelemetry/exporter-otlp-http": "^0.26.0",
+    "http-proxy-middleware": "^2.0.6"
+  }
+}

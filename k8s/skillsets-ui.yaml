@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skillsets-ui
+  namespace: skillsets
+spec:
+  selector:
+    matchLabels:
+      app: skillsets-ui
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: skillsets-ui
+    spec:
+      containers:
+      - name: skillsets-ui
+        image: codesenju/skillsets-ui:v1
+        imagePullPolicy: Always
+        env:
+#        - name: NEXT_PUBLIC_API_ENDPOINT
+#          value: https://uat-skillsets.lmasu.co.za
+        - name: OTEL_ENDPOINT_GRPC
+          value: http://my-collector-xray-collector.opentelemetry-operator-system.svc.cluster.local:4317
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  revisionHistoryLimit: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skillsets-ui
+spec:
+  selector:
+    app: skillsets-ui
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+  type: ClusterIP
+#############
+##   HPA   ##
+#############
+# ---
+# apiVersion: autoscaling/v1
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: skillsets-ui
+#   namespace: skillsets
+# spec:
+#   maxReplicas: 20
+#   minReplicas: 1
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: skillsets-ui
+#   targetCPUUtilizationPercentage: 80

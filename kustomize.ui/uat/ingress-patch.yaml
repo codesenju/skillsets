@@ -1,0 +1,3 @@
+- op: replace #action 
+  path: /spec/rules/0/host #resouirce we want to change
+  value: uat-skillsets-ui.lmasu.co.za #value we want to use for patching 

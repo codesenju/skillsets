@@ -1,0 +1,84 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: uat
+namePrefix: uat-
+
+
+# Replaces SKILLSETS_API_IMAGE_NAME with the new image name and tag
+images:
+- name: SKILLSETS_API_IMAGE_NAME
+  newName: 587878432697.dkr.ecr.us-east-1.amazonaws.com/iac-skillsets-api
+  newTag: "3"
+
+# Generate a configmap
+configMapGenerator:
+- literals:
+  - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+  name: skillsets-api-config
+
+# Takes the name of the redis service and uses it as the value for the REDIS_HOST key in the skillsets-config ConfigMap.
+#- source:
+#    fieldPath: metadata.name
+#    kind: Service
+#    name: skillsets-redis-db
+#    version: v1
+#  targets:
+#  - fieldPaths:
+#    - data.REDIS_HOST
+#    select:
+#      kind: ConfigMap
+#      name: skillsets-api-config
+#  - fieldPaths:
+#    - spec.scaleTargetRef.name
+#    select:
+#      kind: HorizontalPodAutoscaler
+#      name: skillsets-redis-db-hpa
+replacements:
+- source:
+    fieldPath: metadata.name
+    kind: Service
+    name: skillsets-api
+    version: v1
+  targets:
+  - fieldPaths:
+    - spec.scaleTargetRef.name
+    select:
+      kind: HorizontalPodAutoscaler
+      name: skillsets-api-hpa
+
+# This specifies that the patch in ingress-patch.yaml 
+# should be applied to an Ingress resource named skillsets-ingress 
+# in the networking.k8s.io/v1 API group and version. 
+# - patch: |-
+#     - op: replace # action 
+#       path: /spec/rules/0/host # resource we want to change
+#       value: uat-skillsets-ui.lmasu.co.za # value we want to use for patching 
+#   target:
+#     group: networking.k8s.io
+#     version: v1
+#     kind: Ingress
+#     name: skillsets-ui-ingress
+# Replace redis-secret key values with the following:
+patches:
+- path: ingress-patch.yaml
+  target:
+    group: networking.k8s.io
+    kind: Ingress
+    name: skillsets-api-ingress
+    version: v1
+- path: topology_spread_patch.yaml
+- path: mem_cpu_patch.yaml
+- patch: |-
+    - op: replace
+      path: /data/REDIS_HOST
+      value: dWF0LXJlZGlzLW1hc3Rlci51YXQtcmVkaXMuc3ZjLmNsdXN0ZXIubG9jYWw=
+    - op: replace
+      path: /data/REDIS_PASSWORD
+      value: V0ZHNjNXcmZCMA==
+  target:
+    kind: Secret
+    name: redis-secret
+
+resources:
+- ../base/

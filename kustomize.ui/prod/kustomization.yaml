@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Image with the name CONTAINER_IMAGE should have its image name 
+# changed to codesenju/skillsets-api and its tag changed to latest
+images:
+ - name: SKILLSETS_UI_IMAGE_NAME
+   newName: codesenju/skillsets-ui
+   newTag: v1
+
+namespace: prod
+namePrefix: prod-
+
+patches:
+- path: mem_cpu_patch.yaml
+- path: replica_count_patch.yaml
+- target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: skillsets-ui
+  patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/env/0/value
+      value: http://prod-skillsets-api:5000
+#- path: ingress-patch.yaml
+#  target:
+#    group: networking.k8s.io
+#    version: v1
+#    kind: Ingress
+#    name: skillsets-ui-ingress
+- patch: |-
+     - op: replace # action 
+       path: /spec/rules/0/host # resource we want to change
+       value: prod-skillsets-ui.lmasu.co.za # value we want to use for patching 
+  target:
+     group: networking.k8s.io
+     version: v1
+     kind: Ingress
+     name: skillsets-ui-ingress
+    
+resources:
+- ../base/

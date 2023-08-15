@@ -1,0 +1,10 @@
+################
+## DEPLOYMENT ##
+################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  skillsets-api
+spec:
+  replicas: 3

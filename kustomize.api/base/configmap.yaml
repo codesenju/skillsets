@@ -1,0 +1,17 @@
+################
+## CONFIG MAP ##
+################
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: skillsets-api-config
+data:
+#  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:  "http://my-collector-xray-collector.prometheus.svc.cluster.local:4317"
+#  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://my-collector-xray-collector.prometheus.svc.cluster.local:4317"
+#  OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: "http://my-collector-xray-collector.prometheus.svc.cluster.local:4317"
+  REDIS_HOST: redis.skillsets.svc.cluster.local
+  REDIS_PORT: "6379"
+#  OTEL_TRACES_SAMPLER: xray
+#  OTEL_PROPAGATORS: xray
+  PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION: python

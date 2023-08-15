@@ -1,0 +1,113 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skillsets-ui
+spec:
+  selector:
+    matchLabels:
+      app: skillsets-ui
+#  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: skillsets-ui
+    spec:
+      containers:
+      - name: skillsets-ui
+        image: SKILLSETS_UI_IMAGE_NAME
+        imagePullPolicy: Always
+        env:
+        - name: NEXT_PUBLIC_API_ENDPOINT
+          value: https://uat-skillsets.lmasu.co.za
+        - name: OTEL_ENDPOINT_GRPC
+          value: http://my-collector-xray-collector.opentelemetry-operator-system.svc.cluster.local:4317
+        ports:
+        - containerPort: 3000
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  revisionHistoryLimit: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: skillsets-ui
+spec:
+  selector:
+    app: skillsets-ui
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: skillsets-ui-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: dev-skillsets-ui.lmasu.co.za
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: skillsets-ui
+                port:
+                  number: 3000
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: skillsets-ui-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: skillsets-ui
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 60
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+  behavior:
+    scaleUp:
+      policies:
+      - type: Pods
+        value: 3
+        periodSeconds: 5
+    scaleDown:
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 5

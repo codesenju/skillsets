@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: skillsets-redis-db
+spec:
+  selector:
+    matchLabels:
+      app: skillsets-redis-db # has to match .spec.template.metadata.labels
+  serviceName: "skillsets-redis-db"
+#  replicas: 0 # by default is 1
+  template:
+    metadata:
+      labels:
+        app: skillsets-redis-db # has to match .spec.selector.matchLabels
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: redis
+        image: redis:7
+        command:
+          - redis-server
+          - --save
+          - "60"
+          - "1"
+          - --loglevel
+          - debug
+        resources:
+          requests:
+            cpu: "256m"
+            memory: "512M"
+        ports:
+        - containerPort: 6379
+          name: redis-port
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-efs-claim
+#  volumeClaimTemplates:
+#  - metadata:
+#      name: redis-data
+#    spec:
+#      accessModes: [ "ReadWriteMany" ]
+#      storageClassName: "efs-sc-dynamic"
+#      resources:
+#        requests:
+#          storage: 1Gi
+---
+# https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: v1
+kind: Service
+metadata:
+  name: skillsets-redis-db
+spec:
+  selector:
+    app: skillsets-redis-db
+  type: ClusterIP
+  ports:
+  - name: redis-port
+    protocol: TCP
+    port: 6379
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: efs-pv
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: efs-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-0ce3af02096dd1a5f:/skillsets
+# aws efs create-access-point --file-system-id fs-0ce3af02096dd1a5f --root-directory Path=/skillsets
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-efs-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: efs-sc
+  resources:
+    requests:
+      storage: 1Gi

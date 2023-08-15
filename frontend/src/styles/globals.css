@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #4b5563;
+  --secondary-color: #718096;
+  --background-color: #f7fafc;;
+  --third-color:  rgb(184, 190, 201);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary-color: #cbd5e0;
+    --secondary-color: #a0aec0;
+    --background-color: #1a202c;
+    --third-color:  rgb(184, 190, 201);
+  }
+}
+
+body {
+  color: var(--primary-color);
+  background-color: var(--background-color);
+}

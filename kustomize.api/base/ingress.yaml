@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: skillsets-api-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: dev-skillsets.lmasu.co.za
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: skillsets-api
+                port:
+                  name: http

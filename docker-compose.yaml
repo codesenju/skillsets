@@ -1,0 +1,105 @@
+version: "3.3"
+networks:
+  devops:
+    driver: bridge
+volumes:
+  redis-data:
+services:
+  ui:
+    image:  codesenju/skillsets-ui:latest
+    build:
+      context: frontend/
+      dockerfile: Dockerfile
+    container_name: skillsets-ui
+    environment:
+      NEXT_PUBLIC_API_ENDPOINT: "http://skillsets:5000"
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://otel-collector:4317"
+      # OTEL_RESOURCE_ATTRIBUTES: "service.name=skillsets-ui,service.namespace=docker,service.version=1.0"
+      OTEL_ENDPOINT_GRPC: "http://otel-collector:4317"
+    restart: unless-stopped
+    networks:
+      - devops
+    ports:
+      - 3000:3000
+    depends_on:
+      - skillsets
+  skillsets:
+    image:  codesenju/skillsets:otel
+    build: skillsets/
+    container_name: skillsets
+    environment:
+       REDIS_HOST: redis
+       REDIS_PORT: "6379"
+       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://otel-collector:4317"
+       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:  "http://otel-collector:4317"
+#       OTEL_EXPORTER_OTLP_LOGS_ENDPOINT:  "http://otel-collector:4317"
+       OTEL_TRACES_SAMPLER: xray
+       OTEL_PROPAGATORS: xray
+       OTEL_PYTHON_ID_GENERATOR: xray
+    restart: unless-stopped
+    networks:
+      - devops
+    ports:
+      - 5000:5000
+    depends_on:
+      - redis
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --save
+      - "60" 
+      - "1" 
+      - --loglevel
+      - warning
+    networks:
+        - devops
+    volumes:
+       - redis-data:/data
+#    ports:
+#      - 6379:6379 
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.75.0
+    container_name: otel-collector
+    deploy:
+      resources:
+        limits:
+          memory: 125M
+#    restart: unless-stopped
+    command:
+      - --config=/etc/otel-collector-config.yaml
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    networks:
+      - devops
+    ports:
+      - "4317:4317"     # OTLP over gRPC receiver
+      - "4318:4318"     # OTLP over HTTP receiver
+      - "9464"          # Prometheus exporter
+      - "8888"          # metrics endpoint
+  # Jaeger
+  jaeger:
+    image: jaegertracing/all-in-one:1.43
+    container_name: jaeger
+#    command:
+#      - "--memory.max-traces"
+#      - "10000"
+#      - "--query.base-path"
+#      - "/jaeger/ui"
+#      - "--prometheus.server-url"
+#      - "http://${PROMETHEUS_ADDR}"
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    restart: unless-stopped
+    networks:
+      - devops
+    ports:
+      - "16686:16686"                   # Jaeger UI
+#      - "4317:4317"                     # OTLP gRPC default port
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
