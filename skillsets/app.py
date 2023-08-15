@@ -151,4 +151,4 @@ def delete_engineer(engineer_name):
     return f"Engineer with name '{engineer_name}' has been deleted",  200
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
