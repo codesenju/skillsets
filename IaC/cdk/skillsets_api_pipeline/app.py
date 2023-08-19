@@ -138,8 +138,8 @@ class pipelineStack(Stack):
         code=codecommit.Code.from_directory(K8S_PATH)
         )
 
-        # Create an S3 bucket for CodeBuild cache
-        cache_bucket = s3.Bucket(self, 'CodeBuildCacheBucket')
+        ## Create an S3 bucket for CodeBuild cache
+        ## cache_bucket = s3.Bucket(self, 'CodeBuildCacheBucket')
 
         #################
         ### CodeBuild ###
