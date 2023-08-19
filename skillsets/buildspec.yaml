@@ -5,7 +5,7 @@ phases:
   install:
     commands:
       - echo "Install Phase - Nothing to do using latest Amazon Linux Docker Image for CodeBuild which has all AWS Tools - https://github.com/aws/aws-codebuild-docker-images/blob/master/al2/x86_64/standard/3.0/Dockerfile"
-      # Install kustomize
+      ## Install kustomize
       - curl -sLo /tmp/kustomize.tar.gz  https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.0.3/kustomize_v5.0.3_linux_amd64.tar.gz
       - tar xzvf /tmp/kustomize.tar.gz -C /usr/bin/ && chmod +x /usr/bin/kustomize && rm -rf /tmp/kustomize.tar.gz
       - kustomize version
@@ -15,6 +15,9 @@ phases:
       - DOCKER_USERNAME=$(echo $DOCKER_CREDS | jq -r .username)
       - DOCKER_PASSWORD=$(echo $DOCKER_CREDS | jq -r .password)
       - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin
+      ## Install trivy
+      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.22.0
+      - trivy --version
   pre_build:
       commands:
         # Docker Image Tag with Date Time & Code Buiild Resolved Source Version
@@ -35,6 +38,8 @@ phases:
       - echo "Build started on `date`"
       - echo "Building the Docker image..."
       - docker build --tag $REPOSITORY_URI:$TAG .
+      # Image vulnerability scanning
+      - trivy image --exit-code 1 --severity MEDIUM,HIGH,CRITICAL $REPOSITORY_URI:$TAG
   post_build:
     commands:
       # Push Docker Image to ECR Repository
