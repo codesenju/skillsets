@@ -37,8 +37,10 @@ phases:
       #- cd CODEBUILD_SRC_DIR
       - echo "Build started on `date`"
       - echo "Building the Docker image..."
+      ## Check Dockerfile misconfiguration
+      - trivy config --exit-code 1 ./Dockerfile
       - docker build --tag $REPOSITORY_URI:$TAG .
-      # Image vulnerability scanning
+      ## Image vulnerability scanning
       - trivy image --exit-code 1 --severity MEDIUM,HIGH,CRITICAL $REPOSITORY_URI:$TAG
   post_build:
     commands:
