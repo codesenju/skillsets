@@ -58,6 +58,9 @@ docker run -d --name jaeger \
 ## Multi Arch Build
 ```bash
 docker buildx build --push  --platform=linux/amd64,linux/arm64 -t codesenju/skillsets-api:latest .
+
+$ docker buildx create --use --driver docker-container --name docker-driver
+
 ```
 ## React UI
 ```bash

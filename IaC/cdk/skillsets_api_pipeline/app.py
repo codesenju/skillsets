@@ -4,9 +4,11 @@
 # - https://ecsworkshop.com/app_mesh/appmesh-implementation/mesh-crystal-app/
 # - https://docs.aws.amazon.com/cdk/api/v2/python/index.html
 # - https://catalog.us-east-1.prod.workshops.aws/workshops/d93fec4c-fb0f-4813-ac90-758cb5527f2f/en-US/walkthrough
-import boto3
+# import boto3
 import subprocess
 from os import path
+from constructs import Construct
+import aws_cdk as cdk
 from aws_cdk import (
     CfnParameter,
     Stack,
@@ -17,12 +19,13 @@ from aws_cdk import (
     aws_eks as eks,
     aws_secretsmanager as secretsmanager,
     aws_codepipeline as codepipeline,
-    aws_codepipeline_actions as codepipeline_actions
+    aws_codepipeline_actions as codepipeline_actions,
+    aws_s3 as s3
+    
+    
 )
-
 import os, json
-from constructs import Construct
-import aws_cdk as cdk
+
 #from aws_cdk.aws_ecr_assets import DockerImageAsset
 #import  cdk_ecr_deployment  as ecrdeploy
 
@@ -135,6 +138,9 @@ class pipelineStack(Stack):
         code=codecommit.Code.from_directory(K8S_PATH)
         )
 
+        # Create an S3 bucket for CodeBuild cache
+        cache_bucket = s3.Bucket(self, 'CodeBuildCacheBucket')
+
         #################
         ### CodeBuild ###
         #################
@@ -173,9 +179,16 @@ class pipelineStack(Stack):
             build_image=codebuild.LinuxBuildImage.AMAZON_LINUX_2_4,
             ),
             source=codebuild.Source.code_commit(repository=app_repo),
-            secondary_sources=[codebuild.Source.code_commit(repository=k8s_repo,identifier="K8S")]
-        )
-
+            secondary_sources=[codebuild.Source.code_commit(repository=k8s_repo,identifier="K8S")],
+        
+            # Enable Docker layer and git caching
+            cache=codebuild.Cache.local(
+               codebuild.LocalCacheMode.DOCKER_LAYER,
+               codebuild.LocalCacheMode.SOURCE
+            )
+            
+            )
+    
         # Creates Codebuild Project for dev CD Pipeline
         cd_pipeline_dev = codebuild.Project(self, f"iac_{APP_NAME}_codebuildproject_cd_dev",
             project_name=f"IaC-{APP_NAME}-cd-dev",
@@ -275,7 +288,13 @@ class pipelineStack(Stack):
             build_image=codebuild.LinuxBuildImage.AMAZON_LINUX_2_4,
             ),
             source=codebuild.Source.code_commit(repository=app_repo),
-            secondary_sources=[codebuild.Source.code_commit(repository=k8s_repo,identifier="K8S")]
+            secondary_sources=[codebuild.Source.code_commit(repository=k8s_repo,identifier="K8S")],
+            # Enable Docker layer and git caching
+            cache=codebuild.Cache.local(
+               codebuild.LocalCacheMode.DOCKER_LAYER,
+               codebuild.LocalCacheMode.SOURCE
+            )
+            
         )
         
         # Creates Codebuild Project for uat CD Pipeline
@@ -375,7 +394,12 @@ class pipelineStack(Stack):
             build_image=codebuild.LinuxBuildImage.AMAZON_LINUX_2_4,
             ),
             source=codebuild.Source.code_commit(repository=app_repo),
-            secondary_sources=[codebuild.Source.code_commit(repository=k8s_repo,identifier="K8S")]
+            secondary_sources=[codebuild.Source.code_commit(repository=k8s_repo,identifier="K8S")],
+            # Enable Docker layer and git caching
+            cache=codebuild.Cache.local(
+               codebuild.LocalCacheMode.DOCKER_LAYER,
+               codebuild.LocalCacheMode.SOURCE
+            )
         )
         # Creates Codebuild Project for Auto Testing CD Pipeline
         cd_pipeline_auto_test = codebuild.Project(self, f"iac_{APP_NAME}_codebuildproject_auto_test",
@@ -446,7 +470,12 @@ class pipelineStack(Stack):
             build_image=codebuild.LinuxBuildImage.AMAZON_LINUX_2_4,
             ),
             source=codebuild.Source.code_commit(repository=app_repo),
-            secondary_sources=[codebuild.Source.code_commit(repository=k8s_repo,identifier="K8S")]
+            secondary_sources=[codebuild.Source.code_commit(repository=k8s_repo,identifier="K8S")],
+            # Enable Docker layer and git caching
+            cache=codebuild.Cache.local(
+               codebuild.LocalCacheMode.DOCKER_LAYER,
+               codebuild.LocalCacheMode.SOURCE
+            )
         )
         
         ############################
@@ -459,6 +488,7 @@ class pipelineStack(Stack):
            repository=app_repo,
            branch="main",
            output=app_source_output,
+        
         )
 
         # Create ci build stage action
@@ -493,6 +523,7 @@ class pipelineStack(Stack):
             input=ci_build_artifact,
             outputs=[cd_build_artifact_uat],
             run_order=2,
+            
         )
 
         # Create Performance Test cd build stage action
@@ -502,7 +533,7 @@ class pipelineStack(Stack):
             project=cd_pipeline_auto_test,
             input=ci_build_artifact,
             outputs=[cd_auto_test_artifact],
-            run_order=3,
+            run_order=3
         )
         
         ####################
@@ -534,7 +565,6 @@ class pipelineStack(Stack):
         # STACK OUTPUTS
         cdk.CfnOutput(self,f"iac-{APP_NAME}-app-repository",export_name=f"iac-{APP_NAME}-app-repository",value=app_repo.repository_clone_url_http)
         cdk.CfnOutput(self,f"iac-{APP_NAME}-k8s-repository",export_name=f"iac-{APP_NAME}-k8s-repository",value=k8s_repo.repository_clone_url_http)
-
 app=cdk.App()
 pipelineStack(app, "SkilllsetsAPIPipelineStack", env=cdk.Environment(account=os.getenv("AWS_ACCOUNT_ID"), region=os.getenv("AWS_REGION")),)
 app.synth()

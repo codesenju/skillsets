@@ -9,24 +9,23 @@ phases:
       - curl -sLo /tmp/kustomize.tar.gz  https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.0.3/kustomize_v5.0.3_linux_amd64.tar.gz
       - tar xzvf /tmp/kustomize.tar.gz -C /usr/bin/ && chmod +x /usr/bin/kustomize && rm -rf /tmp/kustomize.tar.gz
       - kustomize version
-      # Install argocd cli
-      - curl -sLo /usr/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.7.2/argocd-linux-amd64 && chmod +x /usr/bin/argocd
-      - argocd version --client
+      ## Install argocd cli
+      #- curl -sLo /usr/bin/argocd https://github.com/argoproj/argo-cd/releases/download/v2.7.2/argocd-linux-amd64 && chmod +x /usr/bin/argocd
+      #- argocd version --client
+      ## Get docker credentials and login
       - echo "Logging in to Docker..."
       - DOCKER_CREDS=$(aws secretsmanager get-secret-value --secret-id iac-my-docker-secret --query SecretString --output text)
       - DOCKER_USERNAME=$(echo $DOCKER_CREDS | jq -r .username)
       - DOCKER_PASSWORD=$(echo $DOCKER_CREDS | jq -r .password)
       - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin
       # Authenticate ARGOCD SERVER
-      - ARGOCD_CREDS=$(aws secretsmanager get-secret-value --secret-id iac-my-argocd-secret --query SecretString --output text)
-      - ARGOCD_USERNAME=$(echo $ARGOCD_CREDS | jq -r .username)
-      - ARGOCD_PASSWORD=$(echo $ARGOCD_CREDS | jq -r .password)
-      - ARGOCD_SERVER=$(echo $ARGOCD_CREDS | jq -r .server)
-      - echo "Authenticate argocd server"
-      #- ARGOCD_TOKEN=$(curl https://${ARGOCD_SERVER}/api/v1/session -d $'{"username":"'"${ARGOCD_USERNAME}"'","password":"'"${ARGOCD_PASSWORD}"'"}' | jq -r '.token')
-      #- argocd --auth-token $ARGOCD_TOKEN version
-      - argocd login $ARGOCD_SERVER --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD
-      - argocd version
+      #- ARGOCD_CREDS=$(aws secretsmanager get-secret-value --secret-id iac-my-argocd-secret --query SecretString --output text)
+      #- ARGOCD_USERNAME=$(echo $ARGOCD_CREDS | jq -r .username)
+      #- ARGOCD_PASSWORD=$(echo $ARGOCD_CREDS | jq -r .password)
+      #- ARGOCD_SERVER=$(echo $ARGOCD_CREDS | jq -r .server)
+      #- echo "Authenticate argocd server"
+      #- argocd login $ARGOCD_SERVER --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD
+      #- argocd version
   pre_build:
       commands:
         # Docker Image Tag with Date Time & Code Buiild Resolved Source Version
@@ -68,58 +67,46 @@ phases:
       #- argocd --auth-token $ARGOCD_TOKEN app get ${ENV}-skillsets-api --refresh
       #- echo "Completed applying changes to Kubernetes Objects"
       # Deploy
-      - cd $CODEBUILD_SRC_DIR_K8S/$ENV
+      #- cd $CODEBUILD_SRC_DIR_K8S/$ENV
       # Update the argocd branch & deploy new image
       #- echo "Updating argocd branch and deploying the new image"
-      #- TEMP_FOLDER="$(mktemp -d)"
-      #- echo "Clone the argoccd branch..."
-      #- git clone -b main "https://git-codecommit.us-east-1.amazonaws.com/v1/repos/argocd-k8s-manifests" ${TEMP_FOLDER}
-      #- cd ${TEMP_FOLDER}
-      - CODECOMMIT_CREDS=$(aws secretsmanager get-secret-value --secret-id iac-my-codecommit-secret --query SecretString --output text)
-      - CODECOMMIT_USERNAME=$(echo $CODECOMMIT_CREDS | jq -r .username)
-      - CODECOMMIT_PASSWORD=$(echo $CODECOMMIT_CREDS | jq -r .password)
-      - kustomize edit set image SKILLSETS_API_IMAGE_NAME=$REPOSITORY_URI:$TAG
-      - cat kustomization.yaml | head -n 13
-      - git config --global user.email "devops@codepipeline.com"
-      - git config --global user.name "lmasu"
-      - git add kustomization.yaml
-      - git commit -m "Updated the image to $REPOSITORY_URI:$TAG"
-      - git push
-      - app_exists=$(argocd app get ${ENV}-${APP_NAME} > /dev/null 2>&1; echo $?)
-      - echo "app exists $app_exists"
-      - | 
-        if [ $app_exists -ne 0 ]; then
-            argocd repo add CODEBUILD_SOURCE_REPO_URL_K8S --username $CODECOMMIT_USERNAME --password $CODECOMMIT_PASSWORD --name ${APP_NAME}-k8s-manifests
-            argocd app create ${ENV}-${APP_NAME} \
-                --repo $CODEBUILD_SOURCE_REPO_URL_K8S \
-                --path $ENV \
-                --dest-server https://0807E0011E71891914718E9F1BC052A3.gr7.us-east-1.eks.amazonaws.com \
-                --dest-namespace $ENV \
-                --sync-policy auto \
-                --self-heal
-        fi
-      #- sleep 10
+      #- CODECOMMIT_CREDS=$(aws secretsmanager get-secret-value --secret-id iac-my-codecommit-secret --query SecretString --output text)
+      #- CODECOMMIT_USERNAME=$(echo $CODECOMMIT_CREDS | jq -r .username)
+      #- CODECOMMIT_PASSWORD=$(echo $CODECOMMIT_CREDS | jq -r .password)
+      #- kustomize edit set image SKILLSETS_API_IMAGE_NAME=$REPOSITORY_URI:$TAG
+      #- cat kustomization.yaml | head -n 13
+      #- git config --global user.email "devops@codepipeline.com"
+      #- git config --global user.name "codesenju"
+      #- git add kustomization.yaml
+      #- git commit -m "Updated the image to $REPOSITORY_URI:$TAG"
+      #- git push
+      #- app_exists=$(argocd app get ${ENV}-${APP_NAME} > /dev/null 2>&1; echo $?)
+      #- | 
+      #  if [ $app_exists -ne 0 ]; then
+      #      argocd repo add CODEBUILD_SOURCE_REPO_URL_K8S --username $CODECOMMIT_USERNAME --password $CODECOMMIT_PASSWORD --name ${APP_NAME}-k8s-manifests
+      #      argocd app create ${ENV}-${APP_NAME} \
+      #          --repo $CODEBUILD_SOURCE_REPO_URL_K8S \
+      #          --path $ENV \
+      #          --dest-server $DEST_SERVER \
+      #          --dest-namespace $ENV \
+      #          --sync-policy auto \
+      #          --self-heal
+      #  fi
       #- echo "Argocd server application status after push"
-      #- argocd --auth-token $ARGOCD_TOKEN app get ${ENV}-skillsets-api --refresh
+      #- argocd app get ${ENV}-${APP_NAME} --refresh
       #- echo "Sync argocd server application"
-      #- argocd --auth-token $ARGOCD_TOKEN app sync ${ENV}-skillsets-api
+      #- argocd app sync ${ENV}-${APP_NAME}
       #- echo "Wait for argocd server application sync to complete"
-      #- argocd --auth-token $ARGOCD_TOKEN app wait ${ENV}-skillsets-api
-      # Additional Commands to view your credentials      
-      #- echo "Credentials Value is..  ${CREDENTIALS}"      
-      #- echo "AWS_ACCESS_KEY_ID...  ${AWS_ACCESS_KEY_ID}"            
-      #- echo "AWS_SECRET_ACCESS_KEY...  ${AWS_SECRET_ACCESS_KEY}"            
-      #- echo "AWS_SESSION_TOKEN...  ${AWS_SESSION_TOKEN}"            
-      #- echo "AWS_EXPIRATION...  $AWS_EXPIRATION"             
-      #- echo "EKS_CLUSTER_NAME...  $EKS_CLUSTER_NAME"
+      #- argocd app wait ${ENV}-${APP_NAME}
       #- echo "Create artifact"
       ## Create Artifacts which we can use if we want to continue our pipeline for other stages 
-      - printf '[{"name":"${ENV}-${APP_NAME}","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > $CODEBUILD_SRC_DIR/build.json
+      - printf '[{"app_name":"%s","image_name":"%s","image_tag":"%s"}]' "${APP_NAME}" "$REPOSITORY_URI" "$TAG" > $CODEBUILD_SRC_DIR/build.json
       #- kubectl apply -k $ENV --dry-run=client -oyaml | envsubst > manifests.yaml  
-      - kustomize build . > $CODEBUILD_SRC_DIR/manifest.yaml
-      - cat $CODEBUILD_SRC_DIR/manifest.yaml
+      - kustomize build $CODEBUILD_SRC_DIR_K8S/$ENV > $CODEBUILD_SRC_DIR/manifests.yaml
+      - cat $CODEBUILD_SRC_DIR/manifests.yaml
       - cat $CODEBUILD_SRC_DIR/build.json
 artifacts:
   files: 
     - build.json   
     - manifests.yaml
+    - argocd.yaml
