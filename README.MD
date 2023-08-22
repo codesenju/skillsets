@@ -73,7 +73,18 @@ npm start
 # DevSecOps Tools
 ### Static Application Security Testing (SAST)
 - [Bandit](https://bandit.readthedocs.io/en/latest/start.html)
+  ```bash
+  pip install bandit
+  bandit app.py
+  ```
 - [Trivy](https://github.com/aquasecurity/trivy)
+  ```bash
+  trivy image test:latest
+  ```
+- [Safety](https://pyup.io/safety/)
+  ```bash
+  safety -r requirements.txt
+  ```
 ### Dynamic Security Testing (DAST)
 
 # Reference:

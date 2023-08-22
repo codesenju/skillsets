@@ -7,9 +7,11 @@ ENV REDIS_HOST=localhost
 COPY ./requirements.txt .
 COPY ./app.py  .
 
-# Run bandit source code security checks
-RUN pip install bandit==1.7.5 &&\
-    bandit app.py
+# Run bandit/safety for source code security checks and package checks
+RUN pip install bandit==1.7.5 safety==2.3.5 && \
+    bandit app.py && \
+    safety check -r requirements.txt
+
 
 RUN apt-get update -y && \
     apt-get install --no-install-recommends -y bind9-utils curl dnsutils ncat stress gcc && \

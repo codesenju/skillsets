@@ -564,7 +564,7 @@ app=cdk.App()
 pipelineStack(app, "SkilllsetsAPIPipelineStack", env=cdk.Environment(account=os.getenv("AWS_ACCOUNT_ID"), region=os.getenv("AWS_REGION")),)
 app.synth()
 
-# aws ecr delete-repository --repository-name iac-skillsets-api --force && printf y | cdk destroy --require-approval never && cdk deploy --require-approval never
+# aws ecr delete-repository --repository-name iac-skillsets-api --force || true && printf y | cdk destroy --require-approval never && cdk deploy --require-approval never
 # printf y | cdk destroy --require-approval never
 # Delete all buckets that start with skilllsets
 # aws s3 ls | grep 'skilllsets' | cut -d' ' -f3 | xargs -I {} aws s3 rb s3://{} --force
