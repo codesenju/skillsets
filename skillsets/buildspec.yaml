@@ -33,6 +33,10 @@ phases:
         #- export KUBECONFIG=$HOME/.kube/config
   build:
     commands:
+      # Run python source code & packages security checks | SAST
+      - pip install bandit==1.7.5 safety==2.3.5
+      - bandit app.py
+      - safety check -r requirements.txt
       # Build Docker Image
       - cd $CODEBUILD_SRC_DIR
       - echo "Build started on `date`"

@@ -1,5 +1,5 @@
 {
-"app": "python3 app.py",
-"watch": "python3 app.py"
+"app": "python3 skillsets_api.py",
+"watch": "python3 skillsets_api.py"
 }
 
