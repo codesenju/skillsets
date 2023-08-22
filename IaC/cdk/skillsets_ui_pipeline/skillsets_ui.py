@@ -6,7 +6,6 @@
 # import boto3
 from constructs import Construct
 import aws_cdk as cdk
-import subprocess
 from os import path
 from aws_cdk import (
     CfnParameter,

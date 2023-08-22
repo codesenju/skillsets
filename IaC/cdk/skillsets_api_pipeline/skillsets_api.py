@@ -4,7 +4,6 @@
 # - https://docs.aws.amazon.com/cdk/api/v2/python/index.html
 # - https://catalog.us-east-1.prod.workshops.aws/workshops/d93fec4c-fb0f-4813-ac90-758cb5527f2f/en-US/walkthrough
 # import boto3
-import subprocess
 from os import path
 from constructs import Construct
 import aws_cdk as cdk
@@ -643,7 +642,7 @@ class PipelineStack(Stack):
         
 app = cdk.App()
 _env = cdk.Environment(account=os.getenv("AWS_ACCOUNT_ID"), region=os.getenv("AWS_REGION"))
-PipelineStack(app,"SkilllsetsAPIPipelineStack", env=_env,)
+PipelineStack(app,"SkilllsetsAPIPipelineStack", env=_env)
 app.synth()
 
 # aws ecr delete-repository --repository-name iac-skillsets-api --force || true && printf y | cdk destroy --require-approval never && cdk deploy --require-approval never
