@@ -6,14 +6,16 @@ ENV REDIS_PORT=6379
 ENV REDIS_HOST=localhost
 COPY ./requirements.txt .
 COPY ./app.py  .
+
+# Run bandit source code security checks
+RUN pip install bandit==1.7.5 &&\
+    bandit app.py
+
 RUN apt-get update -y && \
     apt-get install --no-install-recommends -y bind9-utils curl dnsutils ncat stress gcc && \
     pip install --no-cache-dir -r requirements.txt && \
     # Automatically detect and install OpenTelemetry python packages. 
     opentelemetry-bootstrap -a install
-
-# Run bandit source code security checks
-RUN bandit app.py
 
 RUN chown nobody . -R
 USER nobody
