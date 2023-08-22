@@ -70,6 +70,11 @@ export REACT_APP_API_ENDPOINT=http://localhost:5000
 
 npm start
 ```
+# DevSecOps Tools
+### Static Application Security Testing (SAST)
+- [Bandit](https://bandit.readthedocs.io/en/latest/start.html)
+- [Trivy](https://github.com/aquasecurity/trivy)
+### Dynamic Security Testing (DAST)
 
 # Reference:
 - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/jaegerexporter

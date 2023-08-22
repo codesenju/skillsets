@@ -19,10 +19,7 @@ from aws_cdk import (
     aws_eks as eks,
     aws_secretsmanager as secretsmanager,
     aws_codepipeline as codepipeline,
-    aws_codepipeline_actions as codepipeline_actions,
-    aws_s3 as s3
-    
-    
+    aws_codepipeline_actions as codepipeline_actions
 )
 import os, json
 
@@ -138,8 +135,6 @@ class pipelineStack(Stack):
         code=codecommit.Code.from_directory(K8S_PATH)
         )
 
-        ## Create an S3 bucket for CodeBuild cache
-        ## cache_bucket = s3.Bucket(self, 'CodeBuildCacheBucket')
 
         #################
         ### CodeBuild ###
@@ -441,7 +436,7 @@ class pipelineStack(Stack):
                                            }" > script.js""",
                                     "cat script.js",
                                     "echo 'Run performance test...'",
-                                    "k6 run script.js",
+                                    "K6_PROMETHEUS_RW_SERVER_URL=https://prom.lmasu.co.za/api/v1/write k6 run -o experimental-prometheus-rw --tag testid=${ENV}-${APP_NAME} script.js",
                                     ]
                     },
                 },
@@ -571,3 +566,5 @@ app.synth()
 
 # aws ecr delete-repository --repository-name iac-skillsets-api --force && printf y | cdk destroy --require-approval never && cdk deploy --require-approval never
 # printf y | cdk destroy --require-approval never
+# Delete all buckets that start with skilllsets
+# aws s3 ls | grep 'skilllsets' | cut -d' ' -f3 | xargs -I {} aws s3 rb s3://{} --force

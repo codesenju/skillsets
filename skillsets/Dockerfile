@@ -11,7 +11,10 @@ RUN apt-get update -y && \
     pip install --no-cache-dir -r requirements.txt && \
     # Automatically detect and install OpenTelemetry python packages. 
     opentelemetry-bootstrap -a install
-    
+
+# Run bandit source code security checks
+RUN bandit app.py
+
 RUN chown nobody . -R
 USER nobody
 EXPOSE 5000

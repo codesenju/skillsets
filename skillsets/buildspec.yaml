@@ -34,12 +34,12 @@ phases:
   build:
     commands:
       # Build Docker Image
-      #- cd CODEBUILD_SRC_DIR
+      - cd $CODEBUILD_SRC_DIR
       - echo "Build started on `date`"
       - echo "Building the Docker image..."
       ## Check Dockerfile misconfiguration
       - trivy config --exit-code 1 ./Dockerfile
-      - docker build --tag $REPOSITORY_URI:$TAG .
+      - docker build --tag $REPOSITORY_URI:$TAG .  > /dev/null  # hide build output
       ## Image vulnerability scanning
       - trivy image --exit-code 1 --severity CRITICAL $REPOSITORY_URI:$TAG
   post_build:

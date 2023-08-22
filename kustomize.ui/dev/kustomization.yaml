@@ -21,6 +21,7 @@ namePrefix: dev-
 #    kind: Ingress
 #    name: skillsets-ui-ingress
 patches:
+- path: mem_cpu_patch.yaml
 - patch: |-
     - op: replace
       path: /spec/template/spec/containers/0/env/0/value

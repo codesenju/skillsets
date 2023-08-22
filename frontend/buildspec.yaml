@@ -18,6 +18,9 @@ phases:
       - DOCKER_USERNAME=$(echo $DOCKER_CREDS | jq -r .username)
       - DOCKER_PASSWORD=$(echo $DOCKER_CREDS | jq -r .password)
       - echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin
+      ## Install trivy
+      - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.22.0
+      - trivy --version
   pre_build:
       commands:
         # Docker Image Tag with Date Time & Code Buiild Resolved Source Version
@@ -37,7 +40,11 @@ phases:
       #- cd CODEBUILD_SRC_DIR
       - echo "Build started on `date`"
       - echo "Building the Docker image..."
+      ## Check Dockerfile misconfiguration
+      - trivy config --exit-code 1 ./Dockerfile
       - docker build --tag $REPOSITORY_URI:$TAG .
+      ## Image vulnerability scanning
+      - trivy image --exit-code 1 --severity CRITICAL $REPOSITORY_URI:$TAG
   post_build:
     commands:
       # Push Docker Image to ECR Repository

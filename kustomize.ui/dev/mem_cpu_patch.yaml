@@ -5,12 +5,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name:  skillsets-api
+  name:  skillsets-ui
 spec:
   template:
     spec:
       containers:
-      - name:  skillsets-api
+      - name:  skillsets-ui
         resources:
           requests:
             cpu: 250m

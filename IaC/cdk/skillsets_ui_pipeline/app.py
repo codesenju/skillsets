@@ -433,7 +433,7 @@ class pipelineStack(Stack):
                                            }" > script.js""",
                                     "cat script.js",
                                     "echo 'Run performance test...'",
-                                    "k6 run script.js",
+                                    "K6_PROMETHEUS_RW_SERVER_URL=https://prom.lmasu.co.za/api/v1/write k6 run -o experimental-prometheus-rw --tag testid=${ENV}-${APP_NAME} script.js",
                                     ]
                     },
                 },

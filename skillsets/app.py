@@ -7,6 +7,7 @@ from flask_cors import CORS
 import redis, os, time
 import psutil
 
+# token = "djuadsuhfoiurnvaiusndvoan"
 app = Flask(__name__)
 # CORS(app, resources={r"/*": {"origins": "*"}}, methods=["GET", "POST", "PUT", "DELETE"])
 CORS(app)
@@ -151,4 +152,5 @@ def delete_engineer(engineer_name):
     return f"Engineer with name '{engineer_name}' has been deleted",  200
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)
+    # app.run(debug=True, use_reloader=False) # Bandit -  Severity: High   Confidence: Medium
+    app.run()
