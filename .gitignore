@@ -4,3 +4,4 @@ cdk/cdk.out/*.json
 .DS_Store
 ui-old/
 */*/*/cdk.out
+**/**/.terraform**

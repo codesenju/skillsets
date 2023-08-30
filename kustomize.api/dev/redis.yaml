@@ -23,7 +23,11 @@ spec:
           - "60"
           - "1"
           - --loglevel
+          - --requirepass ${REDIS_PASSWORD}
           - debug
+        envFrom:
+        - secretRef:
+            name: redis-secret
         resources:
           requests:
             cpu: "256m"

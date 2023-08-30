@@ -10,6 +10,14 @@ images:
   newName: 587878432697.dkr.ecr.us-east-1.amazonaws.com/iac-skillsets-api
   newTag: "4"
 
+# Redis Secret
+secretGenerator:
+- name: redis-secret
+  literals:
+  - REDIS_PASSWORD=12345
+  - REDIS_HOST=localhost
+  - REDIS_PORT="6379"
+
 # Generate a configmap
 configMapGenerator:
 - literals:
@@ -71,13 +79,14 @@ patches:
 - patch: |-
     - op: replace
       path: /data/REDIS_HOST
-      value: cmVkaXMtcHJvZC1tYXN0ZXIucmVkaXMuc3Zj
+      value: c2tpbGxzZXRzLXJlZGlzLWRiLmRldi5zdmM=
     - op: replace
       path: /data/REDIS_PASSWORD
       value: dkF4bzlzT0tSdw==
   target:
     kind: Secret
     name: redis-secret
+- path: patch.yaml
 
 resources:
 - ../base/

@@ -1,0 +1,18 @@
+################
+## DEPLOYMENT ##
+################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  skillsets-api
+  labels:
+    app:  skillsets-api
+spec:
+  template:
+    spec:
+      containers:
+      - name:  skillsets-api
+        envFrom:
+        - secretRef:
+            name: redis-secret
