@@ -28,6 +28,7 @@ services:
     build: skillsets/
     container_name: skillsets
     environment:
+       REDIS_PASSWORD: "12345"
        REDIS_HOST: redis
        REDIS_PORT: "6379"
        OTEL_TRACES_EXPORTER: "otlp"
@@ -48,6 +49,8 @@ services:
   redis:
     image: redis:7
     container_name: redis
+    environment:
+          REDIS_PASSWORD: "12345"
     restart: unless-stopped
     command:
       - redis-server
@@ -56,6 +59,7 @@ services:
       - "1" 
       - --loglevel
       - warning
+      - --requirepass ${REDIS_PASSWORD}
     networks:
         - devops
     volumes:

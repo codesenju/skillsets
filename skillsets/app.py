@@ -17,7 +17,7 @@ metrics = PrometheusMetrics(app)
 # static information as metric
 metrics.info('app_info', 'Application info', version='1.0.0')
 
-redis_password = os.getenv("REDIS_PASSWORD")
+redis_password = os.getenv("REDIS_PASSWORD","12345")
 host=os.getenv("REDIS_HOST","localhost")
 port=os.getenv("REDIS_PORT","6379")
 

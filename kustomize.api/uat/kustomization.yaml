@@ -4,7 +4,6 @@ kind: Kustomization
 namespace: uat
 namePrefix: uat-
 
-
 # Replaces SKILLSETS_API_IMAGE_NAME with the new image name and tag
 images:
 - name: SKILLSETS_API_IMAGE_NAME
