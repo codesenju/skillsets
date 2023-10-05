@@ -5,3 +5,4 @@ cdk/cdk.out/*.json
 ui-old/
 */*/*/cdk.out
 **/**/.terraform**
+.scannerwork/.sonar_lock

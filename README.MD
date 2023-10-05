@@ -85,6 +85,16 @@ npm start
   ```bash
   safety -r requirements.txt
   ```
+- Sonarqube
+```bash
+brew install sonar-scanner
+
+sonar-scanner \
+  -Dsonar.projectKey=skillsets \
+  -Dsonar.sources=. \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.token=sqp_***
+```
 ### Dynamic Security Testing (DAST)
 
 # Reference:
