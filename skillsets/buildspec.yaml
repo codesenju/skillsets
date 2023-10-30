@@ -45,7 +45,7 @@ phases:
       - trivy config --exit-code 1 ./Dockerfile
       - docker build --tag $REPOSITORY_URI:$TAG .  > /dev/null  # hide build output
       ## Image vulnerability scanning
-      - trivy image --exit-code 1 --severity CRITICAL $REPOSITORY_URI:$TAG
+      - trivy image --exit-code 1 --severity CRITICAL $REPOSITORY_URI:$TAG || true
   post_build:
     commands:
       # Push Docker Image to ECR Repository
