@@ -16,14 +16,14 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: redis
-        image: redis:7
-        command:
-          - redis-server
-          - --save
-          - "60"
-          - "1"
-          - --loglevel
-          - debug
+        image: redis/redis-stack:edge
+        # command:
+        #   - redis-server
+        #   - --save
+        #   - "60"
+        #   - "1"
+        #   - --loglevel
+        #   - debug
         resources:
           requests:
             cpu: "256m"

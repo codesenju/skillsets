@@ -5,7 +5,7 @@ kind: Kustomization
 secretGenerator:
 - name: redis-secret
   literals:
-  - REDIS_PASSWORD=12345
+  - REDIS_ARGS="--save 60 1 --loglevel warning --requirepass redis12345"
   - REDIS_HOST=localhost
   - REDIS_PORT="6379"
 

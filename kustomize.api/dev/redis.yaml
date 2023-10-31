@@ -16,15 +16,15 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: redis
-        image: redis:7
-        command:
-          - "redis-server"
-          - "--save"
-          - "60"
-          - "1"
-          - "--loglevel"
-          - "debug"
-          - "--requirepass ${REDIS_PASSWORD}"
+        image: redis/redis-stack:edge
+        # command:
+        #   - "redis-server"
+        #   - "--save"
+        #   - "60"
+        #   - "1"
+        #   - "--loglevel"
+        #   - "debug"
+        #   - "--requirepass ${REDIS_PASSWORD}"
         envFrom:
         - secretRef:
             name: redis-secret

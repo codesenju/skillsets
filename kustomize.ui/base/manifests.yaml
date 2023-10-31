@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: skillsets-ui
-        image: SKILLSETS_UI_IMAGE_NAME
+        image: KUSTOMIZE
         imagePullPolicy: Always
         env:
         - name: NEXT_PUBLIC_API_ENDPOINT

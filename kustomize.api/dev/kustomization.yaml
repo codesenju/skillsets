@@ -6,9 +6,9 @@ namePrefix: dev-
 
 # Replaces SKILLSETS_API_IMAGE_NAME with the new image name and tag
 images:
-- name: SKILLSETS_API_IMAGE_NAME
-  newName: 587878432697.dkr.ecr.us-east-1.amazonaws.com/iac-skillsets-api
-  newTag: "4"
+- name: KUSTOMIZE
+  newName: codesenju/skillsets-api
+  newTag: "1"
 
 # Generate a configmap
 configMapGenerator:
@@ -16,23 +16,6 @@ configMapGenerator:
   - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
   name: skillsets-api-config
 
-# Takes the name of the redis service and uses it as the value for the REDIS_HOST key in the skillsets-config ConfigMap.
-#- source:
-#    fieldPath: metadata.name
-#    kind: Service
-#    name: skillsets-redis-db
-#    version: v1
-#  targets:
-#  - fieldPaths:
-#    - data.REDIS_HOST
-#    select:
-#      kind: ConfigMap
-#      name: skillsets-api-config
-#  - fieldPaths:
-#    - spec.scaleTargetRef.name
-#    select:
-#      kind: HorizontalPodAutoscaler
-#      name: skillsets-redis-db-hpa
 replacements:
 - source:
     fieldPath: metadata.name
@@ -46,19 +29,6 @@ replacements:
       kind: HorizontalPodAutoscaler
       name: skillsets-api-hpa
 
-# This specifies that the patch in ingress-patch.yaml 
-# should be applied to an Ingress resource named skillsets-ingress 
-# in the networking.k8s.io/v1 API group and version. 
-# - patch: |-
-#     - op: replace # action 
-#       path: /spec/rules/0/host # resource we want to change
-#       value: uat-skillsets-ui.lmasu.co.za # value we want to use for patching 
-#   target:
-#     group: networking.k8s.io
-#     version: v1
-#     kind: Ingress
-#     name: skillsets-ui-ingress
-# Replace redis-secret key values with the following:
 patches:
 - path: ingress-patch.yaml
   target:
@@ -68,13 +38,14 @@ patches:
     version: v1
 - path: topology_spread_patch.yaml
 - path: mem_cpu_patch.yaml
+# Replace redis-secret key values with the following:
 - patch: |-
     - op: replace
       path: /data/REDIS_HOST
       value: ZGV2LXNraWxsc2V0cy1yZWRpcy1kYi5kZXYuc3Zj
     - op: replace
       path: /data/REDIS_PASSWORD
-      value: dkF4bzlzT0tSdw==
+      value: cmVkaXMxMjM0NQ==
   target:
     kind: Secret
     name: redis-secret

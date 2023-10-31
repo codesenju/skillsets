@@ -4,11 +4,11 @@ kind: Kustomization
 namespace: prod
 namePrefix: prod-
 
-# Replaces SKILLSETS_API_IMAGE_NAME with the new image name and tag
+# Replaces KUSTOMIZE with the new image name and tag
 images:
-- name: SKILLSETS_API_IMAGE_NAME
+- name: KUSTOMIZE
   newName: codesenju/skillsets-api
-  newTag: latest
+  newTag: "1"
 
 # Generate a configmap
 configMapGenerator:

@@ -6,8 +6,8 @@ namePrefix: dev-
 
 # Replaces SKILLSETS_API_IMAGE_NAME with the new image name and tag
 images:
-- name: SKILLSETS_API_IMAGE_NAME
-  newName: 587878432697.dkr.ecr.us-east-1.amazonaws.com/iac-skillsets-api
+- name: KUSTOMIZE
+  newName: codesenju/skillsets-api
   newTag: "4"
 
 # Redis Secret

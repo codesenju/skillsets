@@ -4,12 +4,9 @@ kind: Kustomization
 # Image with the name CONTAINER_IMAGE should have its image name 
 # changed to codesenju/skillsets-api and its tag changed to latest
 images:
-- name: SKILLSETS_API_IMAGE_NAME
-  newName: 587878432697.dkr.ecr.us-east-1.amazonaws.com/iac-skillsets-ui
-  newTag: "1"
-- name: SKILLSETS_UI_IMAGE_NAME
+- name: KUSTOMIZE
   newName: codesenju/skillsets-ui
-  newTag: v1
+  newTag: "1"
 
 namespace: dev
 namePrefix: dev-
