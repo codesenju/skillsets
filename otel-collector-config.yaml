@@ -20,13 +20,18 @@ exporters:
     endpoint: jaeger:4317
     tls:
       insecure: true
+  otlp/2:
+    endpoint: data-prepper:21890
+    tls:
+      insecure: true
+      insecure_skip_verify: true
 processors:
   batch:
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging,otlp/jaeger]
+      exporters: [logging,otlp/jaeger,otlp/2]
       processors: [batch]
     metrics:
       receivers: [otlp]

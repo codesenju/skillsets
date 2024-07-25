@@ -1,0 +1,233 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: This template deploys a VPC, with a pair of public and private subnets spread across three Availability Zones. In addition to the network components, the following will also be created (AWS Cloud9, Amazon ECR, Amazon EKS, Amazon OpenSearch Service and Reverse-Proxy Instance).
+
+Parameters:
+  ######## VPC Variables ########
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+    Default: VPC-Observability
+
+  VpcId:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type:  AWS::EC2::VPC::Id
+
+  PrivateSubnet1Id:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the first Availability Zone
+    Type: AWS::EC2::Subnet::Id
+
+  PrivateSubnet2Id:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the second Availability Zone
+    Type: AWS::EC2::Subnet::Id
+
+  PrivateSubnet3Id:
+    Description: Please enter the IP range (CIDR notation) for the private subnet in the third Availability Zone
+    Type: AWS::EC2::Subnet::Id
+
+  ######## Amazon OpenSearch Variables ########
+  DomainName:
+    Type: String
+    Default: "observability-aos"
+
+  EngineVersion:
+    Description: Amazon OpenSearch Service - Version
+    Type: String
+    Default: "OpenSearch_2.5"
+
+  InstanceType:
+    Description: Amazon OpenSearch Service - Instance Type
+    Type: String
+    Default: "r6g.large.search"
+
+  OpenSearchMasterUserName:
+    Description: Amazon OpenSearch Service - Username
+    Default: "aosadmin"
+    Type: String
+
+  ######## Reverse Proxy Variables ########
+  ReverseProxyInstanceType:
+    Description: Reverse Proxy EC2 instance type
+    Type: String
+    Default: t2.small
+    AllowedValues:
+      - t2.micro
+      - t2.small
+
+  ReverseProxySSHLocation:
+    Description: Allow SSH into Proxy instance
+    Type: String
+    Default: 172.16.0.0/16
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+
+  ######## Cloud9 Variables ########
+  EnvironmentNameC9:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+    Default: "observability"
+  C9InstanceType:
+    Description: AWS Cloud9 instance type
+    Type: String
+    Default: t3.medium
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t3.small
+      - t3.medium
+    ConstraintDescription: Must be a valid Cloud9 instance type
+  C9EnvType:
+    Description: Environment type.
+    Default: self
+    Type: String
+    AllowedValues:
+      - self
+      - 3rdParty
+      - event-engine
+      - workshop-studio
+    ConstraintDescription: must specify self or 3rdParty.
+  OwnerArn:
+    Type: String
+    Description: The Arn of the Cloud9 Owner to be set if 3rdParty deployment.
+    Default: ""
+  C9InstanceVolumeSize:
+    Type: Number
+    Description: The Size in GB of the Cloud9 Instance Volume.
+    Default: 30
+
+  ######## EKS Cluster Variables ########
+  EKSClusterName:
+    Description: "Please enter the EKS Cluster Name"
+    Type: String
+    Default: "observability-cluster"
+
+  ######## OSI Variables ########
+  OSIPipelineBaseName:
+    Description: "Please enter the Base name for OSI pipelines "
+    Type: String
+    Default: "osi-pipeline"
+
+
+  ######## General ########
+  S3BucketName:
+    Description: "Please enter the bucket name for the dependencies CloudFormation templates"
+    Type: String
+    Default: "ws-assets-prod-iad-r-iad-ed304a55c2ca1aee.s3.us-east-1.amazonaws.com/1abb648b-2ef8-442c-a731-efbcb69c1e1e"
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "General Information"
+        Parameters:
+          - EnvironmentName
+          - S3BucketName
+      - Label:
+          default: "Network Configuration"
+        Parameters:
+          - VpcId
+          - PrivateSubnet1Id
+          - PrivateSubnet2Id
+          - PrivateSubnet3Id
+      - Label:
+          default: "OpenSearch Configuration"
+        Parameters:
+          - DomainName
+          - EngineVersion
+          - InstanceType
+          - OpenSearchMasterUserName
+      - Label:
+          default: "Reverse Proxy Configuration"
+        Parameters:
+          - ReverseProxyInstanceType
+          - ReverseProxySSHLocation
+      - Label:
+          default: "Cloud9 Configuration"
+        Parameters:
+          - EnvironmentNameC9
+          - C9InstanceType
+          - C9EnvType
+          - OwnerArn
+          - C9InstanceVolumeSize
+      - Label:
+          default: "EKS Configuration"
+        Parameters:
+          - EKSClusterName
+
+Resources:
+  Cloud9:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${S3BucketName}/cloud9.yaml
+      Parameters:
+        EnvironmentNameC9: !Ref EnvironmentNameC9
+        C9InstanceType: !Ref C9InstanceType
+        C9EnvType: !Ref C9EnvType
+        OwnerArn: !Ref OwnerArn
+        C9InstanceVolumeSize: !Ref C9InstanceVolumeSize
+        PrivateSubnet1: !Ref PrivateSubnet1Id
+        DeployCloudformationStackLambdaRole: !GetAtt Base.Outputs.DeployCloudformationStackLambdaRole
+        EKSIAMRole: !GetAtt Base.Outputs.EKSIAMRole
+
+  EKSCluster:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${S3BucketName}/ekscluster.yaml
+      Parameters:
+        EKSClusterName: !Ref EKSClusterName
+        S3BucketName: !Ref S3BucketName
+        VPC: !Ref VpcId
+        PrivateSubnet1: !Ref PrivateSubnet1Id
+        PrivateSubnet2: !Ref PrivateSubnet2Id
+        PrivateSubnet3: !Ref PrivateSubnet3Id
+        DeployCloudformationStackLambdaRole: !GetAtt Base.Outputs.DeployCloudformationStackLambdaRole
+        EKSIAMRole: !GetAtt Base.Outputs.EKSIAMRole
+        C9Role: !GetAtt Cloud9.Outputs.C9Role
+        PipelineName: !Ref OSIPipelineBaseName
+
+  OpenSearch:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${S3BucketName}/opensearch.yaml
+      Parameters:
+        DomainName: !Ref DomainName
+        EngineVersion: !Ref EngineVersion
+        InstanceType: !Ref InstanceType
+        OpenSearchMasterUserName: !Ref OpenSearchMasterUserName
+        ReverseProxyInstanceType: !Ref ReverseProxyInstanceType
+        ReverseProxySSHLocation: !Ref ReverseProxySSHLocation
+        VPC: !Ref VpcId
+        PrivateSubnet1: !Ref PrivateSubnet1Id
+        PrivateSubnet2: !Ref PrivateSubnet2Id
+  
+  OpenSearchIngest:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${S3BucketName}/osi.yaml
+      Parameters:
+        AOSDomainEndpoint: !GetAtt OpenSearch.Outputs.AOSDomainEndpoint
+        VPC: !Ref VpcId
+        PrivateSubnet1: !Ref PrivateSubnet1Id
+        PrivateSubnet2: !Ref PrivateSubnet2Id
+        PrivateSubnet3: !Ref PrivateSubnet3Id
+        AOSDomainUserName: !GetAtt OpenSearch.Outputs.AOSDomainUserName
+        AOSMasterPasswordSecretARN: !GetAtt OpenSearch.Outputs.AOSMasterPasswordSecretArn
+        AOSDomainSecurityGroup: !GetAtt OpenSearch.Outputs.OpenSearchIngressSecurityGroup
+        AOSDomainArn: !GetAtt OpenSearch.Outputs.AOSDomainArn
+        PipelineName: !Ref OSIPipelineBaseName
+        
+Outputs:
+  StackRef1:
+    Value: !Ref OpenSearch
+  AOSDashboardsPublic0:
+    Value: !GetAtt OpenSearch.Outputs.AOSDashboardsPublicIP
+  AOSDomainEndpoint0:
+    Value: !GetAtt OpenSearch.Outputs.AOSDomainEndpoint
+  AOSDomainUserName0:
+    Value: !GetAtt OpenSearch.Outputs.AOSDomainUserName
+  AOSDomainPassword0:
+    Value: !GetAtt OpenSearch.Outputs.AOSDomainPassword
+  StackRef2:
+    Value: !Ref Cloud9
+  Cloud9IDE0:
+    Value: !GetAtt Cloud9.Outputs.Cloud9IDE
