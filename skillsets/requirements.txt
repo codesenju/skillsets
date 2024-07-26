@@ -12,6 +12,7 @@ opentelemetry-api==1.19.0
 opentelemetry-instrumentation-flask==0.40b0
 opentelemetry-instrumentation-requests==0.40b0
 opentelemetry-instrumentation-botocore==0.40b0
+opentelemetry-instrumentation-redis==0.40b0
 opentelemetry-sdk-extension-aws==2.0.1
 opentelemetry-propagator-aws-xray==1.0.1
 opentelemetry-distro[otlp]>=0.24b0

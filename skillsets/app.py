@@ -6,6 +6,8 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, BatchSpanProcessor
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
+#========== for redis spans
+from opentelemetry.instrumentation.redis import RedisInstrumentor
 #==========
 from flask import Flask, jsonify, request
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
@@ -21,6 +23,9 @@ trace.set_tracer_provider(TracerProvider())
 trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
 tracer = trace.get_tracer(__name__)
 #==========
+#========== Instrument Redis
+RedisInstrumentor().instrument()
+
 #========== context propagation function to extract the trace context from the request headers:
 def extract_trace_context(headers):
     carrier = {'traceparent': headers.get('Traceparent', '')}
@@ -89,7 +94,7 @@ def add_engineer():
     ctx = extract_trace_context(request.headers)
 
     # Start a new span for this route handler
-    with tracer.start_as_current_span("index_span", context=ctx):
+    with tracer.start_as_current_span("add new engineer", context=ctx):
       # Get the engineer data from the request body
       engineer_data = request.json
       
@@ -115,7 +120,7 @@ def update_engineer_skillset(engineer_name):
     ctx = extract_trace_context(request.headers)
 
     # Start a new span for this route handler
-    with tracer.start_as_current_span("index_span", context=ctx):
+    with tracer.start_as_current_span("update engineer skills", context=ctx):
       # Get the new skill set from the request body
       new_skill_set = request.get_json().get('skills')
       
@@ -135,7 +140,7 @@ def get_skills():
     ctx = extract_trace_context(request.headers)
 
     # Start a new span for this route handler
-    with tracer.start_as_current_span("index_span", context=ctx):
+    with tracer.start_as_current_span("list skills", context=ctx):
       # Get the name of the engineer to retrieve skills for from the query string
       name = request.args.get('name')
       
@@ -151,7 +156,7 @@ def get_engineers_by_skill(skill):
     ctx = extract_trace_context(request.headers)
 
     # Start a new span for this route handler
-    with tracer.start_as_current_span("index_span", context=ctx):
+    with tracer.start_as_current_span("get engineers by skill", context=ctx):
       # Get all engineer names and skills from the Redis database
       engineer_data = {}
       for key in r.scan_iter():
@@ -173,7 +178,7 @@ def get_all_engineers():
     ctx = extract_trace_context(request.headers)
 
     # Start a new span for this route handler
-    with tracer.start_as_current_span("index_span", context=ctx):
+    with tracer.start_as_current_span("get all engineers", context=ctx):
       # Get all engineer names and skills from the Redis database
       engineer_data = {}
       for key in r.scan_iter():
@@ -188,7 +193,7 @@ def get_all_engineers_new():
     ctx = extract_trace_context(request.headers)
 
     # Start a new span for this route handler
-    with tracer.start_as_current_span("index_span", context=ctx):
+    with tracer.start_as_current_span("get all engineers new format", context=ctx):
       # Get all engineer names and skills from the Redis database
       engineer_data = {}
       for key in r.scan_iter():
@@ -207,7 +212,7 @@ def delete_engineer(engineer_name):
     ctx = extract_trace_context(request.headers)
 
     # Start a new span for this route handler
-    with tracer.start_as_current_span("index_span", context=ctx):
+    with tracer.start_as_current_span("delete engineer by name", context=ctx):
       # Check if the engineer exists in the Redis database
       if not r.exists(engineer_name):
           return f"Engineer with name '{engineer_name}' does not exist", 404
